@@ -1,12 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import FormCard from './components/FormCard';
 import DashboardCard from './components/DashboardCard';
+import Auth from './components/Auth';
 import { calculateCost } from './utils/calculateCost';
 import { getVehicleById } from './data/vehicles';
 import { generatePDF } from './utils/pdfGenerator';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from './utils/supabase';
+import { AlertCircle, CheckCircle, LogOut } from 'lucide-react';
 
 const initialFormState = { name: '', vehicle: '', consumption: '', distance: '', fuelPrice: '', date: '' };
 const initialErrors = { name: '', vehicle: '', consumption: '', distance: '', fuelPrice: '', date: '' };
@@ -19,6 +21,26 @@ function App() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingSession(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setView('form');
+    setFormData(initialFormState);
+    setResultData(null);
+  };
 
   const showNotification = useCallback((message, type = 'success') => {
     setNotification({ message, type });
@@ -51,18 +73,34 @@ function App() {
     return isValid;
   }, [formData]);
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!validateForm()) { showNotification('Por favor, preencha todos os campos corretamente', 'error'); return; }
     setIsCalculating(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       const result = calculateCost({ distance: formData.distance, consumption: formData.consumption, fuelPrice: formData.fuelPrice });
-      setResultData({ name: formData.name.trim(), vehicle: formData.vehicle, date: formData.date, result });
+      const resultObj = { name: formData.name.trim(), vehicle: formData.vehicle, date: formData.date, result };
+      setResultData(resultObj);
+
+      // Salva no Supabase
+      const { error } = await supabase.from('translados').insert({
+        user_id: session.user.id,
+        name: formData.name.trim(),
+        vehicle: formData.vehicle,
+        distance: result.distance,
+        consumption: result.consumption,
+        fuel_price: result.fuelPrice,
+        total_cost: result.totalCost,
+        date: formData.date,
+      });
+
+      if (error) showNotification('Erro ao salvar translado.', 'error');
+      else showNotification('Cálculo realizado e salvo!', 'success');
+
       setView('dashboard');
       setIsCalculating(false);
-      showNotification('Cálculo realizado com sucesso!', 'success');
     }, 500);
-  }, [formData, validateForm, showNotification]);
+  }, [formData, validateForm, showNotification, session]);
 
   const handleBack = useCallback(() => setView('form'), []);
   const handleNewCalculation = useCallback(() => { setFormData(initialFormState); setErrors(initialErrors); setResultData(null); setView('form'); }, []);
@@ -75,10 +113,19 @@ function App() {
     finally { setIsGeneratingPDF(false); }
   }, [resultData, showNotification]);
 
+  if (loadingSession) return <div className="min-h-screen bg-aarj-cream flex items-center justify-center"><p className="text-aarj-text-light">Carregando...</p></div>;
+
+  if (!session) return <Auth />;
+
   return (
     <div className="min-h-screen flex flex-col bg-aarj-cream">
       <Header />
-      <main className="flex-1 py-6 sm:py-10 px-4">
+      <div className="flex justify-end px-4 py-2 max-w-xl mx-auto w-full">
+        <button onClick={handleLogout} className="flex items-center gap-1 text-sm text-aarj-text-light hover:text-aarj-error transition-colors">
+          <LogOut className="w-4 h-4" />Sair
+        </button>
+      </div>
+      <main className="flex-1 py-4 sm:py-8 px-4">
         <div className="max-w-xl mx-auto">
           {view === 'form' ? (
             <FormCard formData={formData} errors={errors} onChange={handleFieldChange} onSubmit={handleSubmit} isCalculating={isCalculating} />
