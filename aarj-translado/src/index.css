@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; background-color: #FDFBF7; color: #2C2C2C; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+::selection { background-color: #4A90A4; color: white; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #FDFBF7; }
+::-webkit-scrollbar-thumb { background: #C9A227; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #b08d1f; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+@layer components {
+  .input-field { @apply w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-aarj-text transition-all duration-200 ease-out focus:outline-none focus:border-aarj-blue focus:ring-2 focus:ring-aarj-blue/20 placeholder:text-aarj-text-light; }
+  .input-field-error { @apply border-aarj-error focus:border-aarj-error focus:ring-aarj-error/20; }
+  .btn-primary { @apply w-full px-6 py-3 bg-aarj-blue text-white font-semibold rounded-lg transition-all duration-200 ease-out hover:bg-aarj-blue/90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100; }
+  .btn-secondary { @apply w-full px-6 py-3 bg-transparent border-2 border-aarj-blue text-aarj-blue font-semibold rounded-lg transition-all duration-200 ease-out hover:bg-aarj-blue/10 active:bg-aarj-blue/20; }
+  .card { @apply bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)]; }
+  .label { @apply block text-sm font-medium text-aarj-text mb-2; }
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
