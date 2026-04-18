@@ -93,11 +93,7 @@ function App() {
         date: formData.date,
       };
 
-      console.log('Dados enviados:', JSON.stringify(payload));
-
       const { error } = await supabase.from('translados').insert(payload);
-
-      console.log('Erro Supabase:', JSON.stringify(error));
 
       if (error) showNotification('Erro ao salvar translado.', 'error');
       else showNotification('Cálculo realizado e salvo!', 'success');
