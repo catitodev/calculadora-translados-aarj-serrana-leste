@@ -82,8 +82,7 @@ function App() {
       const resultObj = { name: formData.name.trim(), vehicle: formData.vehicle, date: formData.date, result };
       setResultData(resultObj);
 
-      // Salva no Supabase
-      const { error } = await supabase.from('translados').insert({
+      const payload = {
         user_id: session.user.id,
         name: formData.name.trim(),
         vehicle: formData.vehicle,
@@ -92,7 +91,13 @@ function App() {
         fuel_price: result.fuelPrice,
         total_cost: result.totalCost,
         date: formData.date,
-      });
+      };
+
+      console.log('Dados enviados:', JSON.stringify(payload));
+
+      const { error } = await supabase.from('translados').insert(payload);
+
+      console.log('Erro Supabase:', JSON.stringify(error));
 
       if (error) showNotification('Erro ao salvar translado.', 'error');
       else showNotification('Cálculo realizado e salvo!', 'success');
